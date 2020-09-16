@@ -63,43 +63,40 @@ export default function transformProps(chartProps: ChartProps) {
   const data = queryData.data as TablePivotNewDatum[];
   const metrics = formData.metrics.map(({ label }) => label);
   const { rows, columns } = formData;
-  const columnValues = new Set([]);
-  const columnValuesCount = {};
+
   let columnUnits = {};
   let rowUnits = {};
-  const rowValues = new Set([]);
 
   console.log('formData via TransformProps.ts', formData, data);
 
-  data.forEach(item => {
-    columns.forEach(column => {
-      if (!columnUnits[column]) {
-        columnUnits[column] = new Set([]);
+  const buildUnits = (item, dimension, dimensionUnits) => {
+    dimension.forEach(unit => {
+      if (!dimensionUnits[unit]) {
+        dimensionUnits[unit] = new Set([]);
       }
-      columnUnits[column].add(item[column]);
+      dimensionUnits[unit].add(item[unit]);
     });
+    return dimensionUnits;
+  };
 
-    rows.forEach(row => {
-      if (!rowUnits[row]) {
-        rowUnits[row] = new Set([]);
-      }
-      rowUnits[row].add(item[row]);
-    });
+  data.forEach(item => {
+    columnUnits = buildUnits(item, columns, columnUnits);
+    rowUnits = buildUnits(item, rows, rowUnits);
   });
 
   let prevKey = null;
-  let numberOfColumns = 0;
 
   const uiColumnUnits = Object.entries(columnUnits).reduce((acc, [key, val], i) => {
     acc[key] = multiplyArray([...val], (acc[prevKey] || metrics).length);
     prevKey = key;
-    numberOfColumns = acc[key].length;
     return acc;
   }, {});
 
+  let numberOfColumns = 1;
   columnUnits = Object.entries(columnUnits).reduce((acc, [key, val], i) => {
     acc[key] = [...val];
     prevKey = key;
+    numberOfColumns *= acc[key].length;
     return acc;
   }, {});
 
@@ -108,38 +105,79 @@ export default function transformProps(chartProps: ChartProps) {
     return acc;
   }, {});
 
+  let columnsOneDimension = [];
+  const getAllColumns = columnIndex => {
+    if (columnIndex === columns.length - 1) {
+      columnsOneDimension = columnsOneDimension.concat(columnUnits[columns[columnIndex]]);
+    } else {
+      columnUnits[columns[columnIndex]].forEach(columnUnit => {
+        columnsOneDimension.push(columnUnit);
+        getAllColumns(columnIndex + 1);
+      });
+    }
+  };
+
+  getAllColumns(0);
+
+  let rowsOneDimension = [];
+  const getAllRows = rowIndex => {
+    if (rowIndex === rows.length - 1) {
+      rowsOneDimension = rowsOneDimension.concat(rowUnits[rows[rowIndex]]);
+    } else {
+      rowUnits[rows[rowIndex]].forEach(rowUnit => {
+        rowsOneDimension.push(rowUnit);
+        getAllRows(rowIndex + 1);
+      });
+    }
+  };
+
+  getAllRows(0);
+
   const numberOfRows = rows.reduce((acc, cur) => acc * rowUnits[cur].length, 1);
   const result = [];
-  result.length = numberOfRows * numberOfColumns;
+  result.length = numberOfRows * numberOfColumns * metrics.length;
   result.fill(-1);
-  let columnCounter = 0;
   data.forEach(item => {
-    rows.forEach((row, rowIndex) => {
-      metrics.forEach((metric, metricIndex) => {
-        columns.forEach((column, columnIndex) => {
-          rowUnits[row].forEach((rowUnit, rowUnitIndex) => {
-          const columnPosition = columnUnits[column].indexOf(item[column]) + 1;
-          const rowPosition = (rowUnits[row].indexOf(item[row]) + 1) * (rowIndex + 1);
-          const position = (metricIndex + 1) * rowPosition * columnPosition - 1
-          result[position] = item[metric];
-        });
+    metrics.forEach((metric, metricIndex) => {
+      let positionColumn = 0;
+      let realColumnIndex = 0;
+      columns.forEach((column, columnIndex) => {
+        positionColumn = columnsOneDimension.indexOf(item[column], positionColumn);
       });
+      columnsOneDimension.slice(0, positionColumn).forEach(dim => {
+        if (columnUnits[columns[columns.length - 1]].includes(dim)) {
+          realColumnIndex++;
+        }
+      });
+
+      let positionRow = 0;
+      let realRowIndex = 0;
+      rows.forEach(row => {
+        positionRow = rowsOneDimension.indexOf(item[row], positionRow);
+      });
+      rowsOneDimension.slice(0, positionRow).forEach(dim => {
+        if (rowUnits[rows[rows.length - 1]].includes(dim)) {
+          realRowIndex++;
+        }
+      });
+
+      result[
+        realColumnIndex +
+          metricIndex * numberOfColumns +
+          realRowIndex * (numberOfColumns * metrics.length)
+      ] = item[metric];
     });
   });
-  console.log(11111, result);
 
   return {
     width,
     height,
     data: result,
     rows,
-    columnValuesCount,
     columnUnits: uiColumnUnits,
     rowUnits,
-    columnValues: [...columnValues],
-    rowValues: [...rowValues],
     columns,
-    numberOfColumns,
+    numberOfColumns: numberOfColumns * metrics.length,
     numberOfRows,
     metrics,
   };

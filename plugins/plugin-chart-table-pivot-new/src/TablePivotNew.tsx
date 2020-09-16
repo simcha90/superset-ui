@@ -20,11 +20,6 @@ import React, { useEffect, createRef } from 'react';
 import { styled, supersetTheme } from '@superset-ui/core';
 import { SPLITTER } from './plugin/transformProps';
 
-interface TablePivotNewStylesProps {
-  height: number;
-  width: number;
-}
-
 export type TablePivotNewProps = {
   height: number;
   width: number;
@@ -39,32 +34,30 @@ export type TablePivotNewProps = {
 // imported from @superset-ui/core. For variables available, please visit
 // https://github.com/apache-superset/superset-ui/blob/master/packages/superset-ui-core/src/style/index.ts
 
-const Styles = styled.div<TablePivotNewStylesProps>`
-  height: ${({ height }) => height}px;
-  width: ${({ width }) => width}px;
-  overflow: scroll;
-`;
-
 const Grid = styled.div`
+  ${({ bordered }) => bordered && 'border: 1px solid black;'}
   display: grid;
-  grid-auto-rows: 20px;
-  border: 1px solid black;
+  grid-auto-rows: 21px;
   grid-column: ${({ gridColumn }) => gridColumn || 'auto'};
   grid-auto-flow: ${({ gridAutoFlow }) => gridAutoFlow || 'row'};
   grid-template-columns: ${({ gridTemplateColumns }) => gridTemplateColumns || 'auto'};
   grid-template-rows: ${({ gridTemplateRows }) => gridTemplateRows || 'auto'};
 `;
 
+const StyledGrid = styled(Grid)`
+  height: ${({ height }) => height}px;
+  width: ${({ width }) => width}px;
+  overflow: scroll;
+`;
+
 const GridItem = styled.div`
-  min-height: 20px;
   border: 1px solid black;
   grid-column: ${({ gridColumn }) => gridColumn || 'auto'};
   grid-row: ${({ gridRow }) => gridRow || 'auto'};
 `;
 
 const Item = styled.div`
-  min-height: 20px;
-  border: 1px solid black;
+  ${({ bordered }) => bordered && 'border: 1px solid black;'}
 `;
 
 /**
@@ -85,44 +78,35 @@ export default function TablePivotNew(props: TablePivotNewProps) {
     metrics,
     width,
     height,
-    columnValues,
-    rowValues,
     numberOfColumns,
     columnUnits,
   } = props;
 
-  // const result = [];
-  // rows.forEach(row => {
-  //   metrics.forEach(metric => {
-  //     columns.forEach(column => {
-  //       result.push(
-  //         <Item>
-  //           {data[`${column}${row}`] && data[`${columnValue}${rowValue}`][metric]}
-  //         </Item>,
-  //       );
-  //     });
-  //   });
-  // });
-
   const resultRows = [];
-  const getRow = (rowUnit, i, span) => {
-    rowUnit.forEach(item => {
+  const getRow = (i, span) => {
+    rowUnits[rows[i]].forEach(item => {
       resultRows.push(
         <GridItem gridRow={`span ${numberOfRows / (span * rowUnits[rows[i]].length)}`}>
           <Item>{item}</Item>
         </GridItem>,
       );
-      rowUnits[rows[i + 1]] && getRow(rowUnits[rows[i + 1]], i + 1, span * rowUnits[rows[i]].length);
-    }
+      if (rowUnits[rows[i + 1]]) {
+        getRow(i + 1, span * rowUnits[rows[i]].length);
+      }
+    });
   };
 
-  getRow(rowUnits[rows[0]], 0, 1);
-
+  getRow(0, 1);
 
   return (
-    <Styles height={height} width={width}>
-      <Grid gridTemplateColumns={`auto auto`} gridTemplateRows={`auto auto`}>
-        <Grid gridTemplateColumns={`repeat(${Object.keys(rowUnits).length}, auto)`}>
+    <StyledGrid
+      height={height}
+      width={width}
+      gridTemplateColumns="auto"
+      gridTemplateRows="min-content"
+    >
+      <Grid gridTemplateColumns="auto auto" gridTemplateRows="auto auto" bordered>
+        <Grid gridTemplateColumns={`repeat(${Object.keys(rowUnits).length}, max-content)`}>
           <GridItem
             gridColumn={`span ${Object.keys(rowUnits).length}`}
             style={{ height: 21 * (Object.keys(columnUnits).length + 1) }}
@@ -130,7 +114,7 @@ export default function TablePivotNew(props: TablePivotNewProps) {
           {resultRows}
         </Grid>
         <div>
-          <Grid gridTemplateColumns={`repeat(${numberOfColumns}, auto)`}>
+          <Grid gridTemplateColumns={`repeat(${numberOfColumns}, max-content)`}>
             {metrics.map(metric => (
               <GridItem key={metric} gridColumn={`span ${numberOfColumns / metrics.length}`}>
                 <div>{metric}</div>
@@ -146,10 +130,12 @@ export default function TablePivotNew(props: TablePivotNewProps) {
                 </GridItem>
               ));
             })}
-            {data.map(item => <Item>{item}</Item>)}
+            {data.map(item => (
+              <Item bordered>{item}</Item>
+            ))}
           </Grid>
         </div>
       </Grid>
-    </Styles>
+    </StyledGrid>
   );
 }
