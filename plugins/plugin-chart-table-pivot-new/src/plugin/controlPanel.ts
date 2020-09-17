@@ -29,6 +29,16 @@ const rows: ControlConfig<'SelectControl'> = {
   },
 };
 
+const transpose: ControlConfig<'CheckboxControl'> = {
+  name: 'transpose',
+  config: {
+    type: 'CheckboxControl',
+    label: t('Transpose'),
+    default: false,
+    description: t('Swap Rows and Columns'),
+  },
+};
+
 const config: ControlPanelConfig = {
   /**
    * The control panel is split into two tabs: "Query" and
@@ -111,6 +121,11 @@ const config: ControlPanelConfig = {
       label: t('Query'),
       expanded: true,
       controlSetRows: [['metrics'], [rows], ['columns'], ['adhoc_filters'], ['row_limit', null]],
+    },
+    {
+      label: t('Options'),
+      expanded: true,
+      controlSetRows: [[transpose]],
     },
   ],
 
