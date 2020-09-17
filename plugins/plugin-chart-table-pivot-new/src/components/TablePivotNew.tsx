@@ -20,10 +20,11 @@
 // https://github.com/apache-superset/superset-ui/blob/master/packages/superset-ui-core/src/style/index.ts
 
 import React from 'react';
-import { styled } from '@superset-ui/core';
+import { styled, t } from '@superset-ui/core';
 import { Grid, GridItem } from './Layout';
 import RowsHeader from './RowsHeader';
 import ColumnsHeader from './ColumnsHeader';
+import { ROW_HEIGHT } from '../plugin/utils';
 
 export type TablePivotNewProps = {
   height: number;
@@ -33,9 +34,14 @@ export type TablePivotNewProps = {
 };
 
 const StyledGrid = styled(Grid)`
-  ${({ width }) => width && `grid-row: ${width};`}
-  ${({ height }) => height && `grid-row: ${height};`}
   overflow: scroll;
+`;
+
+const NoData = styled.div`
+  display: flex;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: bold;
 `;
 
 /**
@@ -49,7 +55,6 @@ const StyledGrid = styled(Grid)`
 export default function TablePivotNew(props: TablePivotNewProps) {
   const {
     data,
-    rowUnits,
     columns,
     rows,
     numberOfRows,
@@ -58,6 +63,8 @@ export default function TablePivotNew(props: TablePivotNewProps) {
     height,
     totalNumberOfColumns,
     uiColumnUnits,
+    columnsFillData,
+    rowsFillData,
     uiRowUnits,
   } = props;
 
@@ -65,30 +72,53 @@ export default function TablePivotNew(props: TablePivotNewProps) {
     <StyledGrid
       height={height}
       width={width}
-      gridTemplateColumns="auto"
-      gridTemplateRows="max-content"
+      gridTemplateColumns="max-content"
+      gridTemplateRows="auto"
     >
-      <Grid bordered gridTemplateColumns="auto auto" gridTemplateRows="auto auto">
-        <RowsHeader
-          rowUnits={rowUnits}
-          numberOfRows={numberOfRows}
-          uiColumnUnits={uiColumnUnits}
-          columns={columns}
-          rows={rows}
-          uiRowUnits={uiRowUnits}
-        />
-        <Grid gridTemplateColumns={`repeat(${totalNumberOfColumns}, max-content)`}>
-          <ColumnsHeader
-            metrics={metrics}
-            uiColumnUnits={uiColumnUnits}
+      {rows.length === 0 && columns.length === 0 ? (
+        <NoData>{t('No data to show')}</NoData>
+      ) : (
+        <Grid bordered gridTemplateColumns="auto auto">
+          <RowsHeader
+            rowsFillData={rowsFillData}
+            numberOfRows={numberOfRows}
             columns={columns}
-            totalNumberOfColumns={totalNumberOfColumns}
+            rows={rows}
+            uiRowUnits={uiRowUnits}
           />
-          {data.map(item => (
-            <GridItem bordered>{`${item}`}</GridItem>
-          ))}
+          <Grid
+            gridTemplateColumns={columnsFillData
+              .map(fillData => `${fillData ? 'max-content' : 0}`)
+              .join(' ')}
+            gridTemplateRows={`repeat(${columns.length + 2}, ${ROW_HEIGHT}) ${rowsFillData
+              .map(fillData => `${fillData ? ROW_HEIGHT : 0}`)
+              .join(' ')}`}
+          >
+            <ColumnsHeader
+              columnsFillData={columnsFillData}
+              metrics={metrics}
+              uiColumnUnits={uiColumnUnits}
+              columns={columns}
+              totalNumberOfColumns={totalNumberOfColumns}
+            />
+            {data.map((item, index) => {
+              return (
+                <GridItem
+                  bordered
+                  hidden={
+                    !(
+                      columnsFillData[index % totalNumberOfColumns] &&
+                      rowsFillData[Math.floor(index / totalNumberOfColumns)]
+                    )
+                  }
+                >
+                  {item}
+                </GridItem>
+              );
+            })}
+          </Grid>
         </Grid>
-      </Grid>
+      )}
     </StyledGrid>
   );
 }

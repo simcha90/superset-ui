@@ -45,7 +45,7 @@ export default class TablePivotNewChartPlugin extends ChartPlugin {
     super({
       buildQuery,
       controlPanel,
-      loadChart: () => import('../TablePivotNew'),
+      loadChart: () => import('../components/TablePivotNew'),
       metadata,
       transformProps,
     });

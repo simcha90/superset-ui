@@ -53,14 +53,14 @@ export default function transformProps(chartProps: ChartProps) {
    */
   const { width, height, formData, queryData } = chartProps;
   const data = queryData.data as TablePivotNewDatum[];
-  const metrics = formData.metrics.map(({ label }) => label);
-  const { transpose, rows: tempRows, columns: tempColumns } = formData;
+  const metrics = formData.metrics.map(({ label }) => label).sort();
+  const { transpose, rows: tempRows, columns: tempColumns, numberFormat, dateFormat } = formData;
 
-  let rows = tempRows;
-  let columns = tempColumns;
+  let rows = tempRows || [];
+  let columns = tempColumns || [];
   if (transpose) {
-    rows = tempColumns;
-    columns = tempRows;
+    rows = tempColumns || [];
+    columns = tempRows || [];
   }
 
   console.log('formData via TransformProps.ts', formData, data);
@@ -76,7 +76,7 @@ export default function transformProps(chartProps: ChartProps) {
     oneDimensionColumns,
   } = getUnits(data, columns, rows, metrics);
 
-  const oneDimensionData = getOneDimensionData({
+  const { oneDimensionData, columnsFillData, rowsFillData } = getOneDimensionData({
     data,
     metrics,
     columns,
@@ -84,6 +84,8 @@ export default function transformProps(chartProps: ChartProps) {
     columnUnits,
     rowUnits,
     numberOfColumns,
+    numberFormat,
+    dateFormat,
     numberOfRows,
     oneDimensionRows,
     oneDimensionColumns,
@@ -98,6 +100,8 @@ export default function transformProps(chartProps: ChartProps) {
     uiRowUnits,
     columnUnits,
     rowUnits,
+    columnsFillData,
+    rowsFillData,
     columns,
     totalNumberOfColumns: numberOfColumns * metrics.length,
     numberOfRows,

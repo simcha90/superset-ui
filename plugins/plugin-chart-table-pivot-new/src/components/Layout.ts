@@ -4,15 +4,17 @@ import { supersetTheme } from '@superset-ui/style';
 export const Grid = styled.div`
   ${({ bordered }) => bordered && 'border: 1px solid black;'}
   display: grid;
+  overflow: hidden;
   ${({ gridColumn }) => gridColumn && `grid-column: ${gridColumn};`}
   ${({ gridAutoFlow }) => gridAutoFlow && `grid-auto-flow: ${gridAutoFlow};`}
+  ${({ gridAutoRows }) => gridAutoRows && `grid-auto-rows: ${gridAutoRows};`}
   ${({ gridTemplateColumns }) =>
     gridTemplateColumns && `grid-template-columns: ${gridTemplateColumns};`}
   ${({ gridTemplateRows }) => gridTemplateRows && `grid-template-rows: ${gridTemplateRows};`}
 `;
 
 export const FillItem = styled.div`
-  padding: 3px 5px;
+  ${({ hidden }) => !hidden && 'padding: 3px 5px;'}
   display: flex;
   align-items: center;
   justify-content: center;
@@ -21,10 +23,11 @@ export const FillItem = styled.div`
 `;
 
 export const GridItem = styled(FillItem)`
+  overflow: hidden;
   ${({ bgLevel }) =>
     bgLevel && `background-color: ${supersetTheme.colors.grayscale[`light${bgLevel}`]};`}
   ${({ header }) => header && 'font-weight: bolder;'}
-  ${({ bordered }) => bordered && 'border: 1px solid black;'}
+  ${({ bordered, hidden }) => bordered && !hidden && 'border: 1px solid black;'}
   ${({ gridColumn }) => gridColumn && `grid-column: ${gridColumn};`}
   ${({ gridRow }) => gridRow && `grid-row: ${gridRow};`}
 `;

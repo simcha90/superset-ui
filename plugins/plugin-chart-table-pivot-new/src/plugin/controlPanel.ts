@@ -18,7 +18,14 @@
  */
 import { t, validateNonEmpty } from '@superset-ui/core';
 
-import { sharedControls, ControlConfig, ControlPanelConfig } from '@superset-ui/chart-controls';
+import {
+  sharedControls,
+  ControlConfig,
+  ControlPanelConfig,
+  D3_FORMAT_OPTIONS,
+  D3_FORMAT_DOCS,
+  D3_TIME_FORMAT_OPTIONS,
+} from '@superset-ui/chart-controls';
 
 const rows: ControlConfig<'SelectControl'> = {
   name: 'rows',
@@ -36,6 +43,32 @@ const transpose: ControlConfig<'CheckboxControl'> = {
     label: t('Transpose'),
     default: false,
     description: t('Swap Rows and Columns'),
+  },
+};
+
+const numberFormat = {
+  name: 'number_format',
+  config: {
+    type: 'SelectControl',
+    freeForm: true,
+    label: t('Number format'),
+    renderTrigger: true,
+    default: 'SMART_NUMBER',
+    choices: D3_FORMAT_OPTIONS,
+    description: D3_FORMAT_DOCS,
+  },
+};
+
+const dateFormat = {
+  name: 'date_format',
+  config: {
+    type: 'SelectControl',
+    freeForm: true,
+    label: t('Date format'),
+    renderTrigger: true,
+    choices: D3_TIME_FORMAT_OPTIONS,
+    default: 'smart_date',
+    description: D3_FORMAT_DOCS,
   },
 };
 
@@ -125,7 +158,7 @@ const config: ControlPanelConfig = {
     {
       label: t('Options'),
       expanded: true,
-      controlSetRows: [[transpose]],
+      controlSetRows: [[transpose], [numberFormat]],
     },
   ],
 

@@ -1,3 +1,12 @@
+import {
+  formatNumber,
+  getTimeFormatter,
+  getTimeFormatterForGranularity,
+  smartDateFormatter,
+} from '@superset-ui/core';
+
+export const ROW_HEIGHT = '27px';
+
 const buildUnits = (item, dimension, _units) => {
   const units = { ..._units };
   dimension.forEach(unit => {
@@ -22,11 +31,11 @@ const extractUnits = (dimensionUnits, rootDimension, withHeader = false) => {
   let prevKey = null;
   const { units, uiUnits } = Object.entries(dimensionUnits).reduce(
     (acc, [key, val], i) => {
-      acc.units[key] = [...val];
+      acc.units[key] = [...val].sort();
       unitsSize *= acc.units[key].length;
 
       acc.uiUnits[key] = multiplyArray(
-        [...val],
+        [...val].sort(),
         // For rows we need to add also column name to render it's correctly in css grid
         (acc.uiUnits[prevKey] || rootDimension).length - (withHeader ? 1 : 0),
       );
@@ -54,7 +63,7 @@ const buildOneDimensionUnits = (dimension, dimensionUnits) => {
   const diveInDimension = dimensionIndex => {
     if (dimensionIndex === dimension.length - 1) {
       oneDimensionUnits = oneDimensionUnits.concat(dimensionUnits[dimension[dimensionIndex]]);
-    } else {
+    } else if (dimension[dimensionIndex]) {
       dimensionUnits[dimension[dimensionIndex]].forEach(dimensionUnit => {
         oneDimensionUnits.push(dimensionUnit);
         diveInDimension(dimensionIndex + 1);
@@ -124,21 +133,40 @@ export const getOneDimensionData = ({
   rows,
   oneDimensionColumns,
   oneDimensionRows,
+  numberFormat,
+  dateFormat,
 }) => {
-  const result = [];
+  const oneDimensionData = [];
 
-  result.length = numberOfRows * numberOfColumns * metrics.length;
-  result.fill(null);
+  oneDimensionData.length = numberOfRows * numberOfColumns * metrics.length;
+  oneDimensionData.fill(null);
+
+  const columnsFillData = [];
+  columnsFillData.length = numberOfColumns * metrics.length;
+  columnsFillData.fill(false);
+
+  const rowsFillData = [];
+  rowsFillData.length = numberOfRows;
+  rowsFillData.fill(false);
 
   data.forEach(item => {
     metrics.forEach((metric, metricIndex) => {
       const columnIndex = findUnitsIndex(columns, columnUnits, oneDimensionColumns, item);
       const rowIndex = findUnitsIndex(rows, rowUnits, oneDimensionRows, item);
 
-      result[
+      columnsFillData[columnIndex + metricIndex * numberOfColumns] =
+        columnsFillData[[columnIndex + metricIndex * numberOfColumns]] || item[metric] !== null;
+
+      rowsFillData[rowIndex] = rowsFillData[[rowIndex]] || item[metric] !== null;
+
+      oneDimensionData[
         columnIndex + metricIndex * numberOfColumns + rowIndex * (numberOfColumns * metrics.length)
-      ] = item[metric];
+      ] = formatNumber(numberFormat, item[metric]);
     });
   });
-  return result;
+  return {
+    oneDimensionData,
+    columnsFillData,
+    rowsFillData,
+  };
 };

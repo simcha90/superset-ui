@@ -1,7 +1,13 @@
 import { GridItem } from './Layout';
 import React from 'react';
 
-const ColumnsHeader = ({ metrics, uiColumnUnits, columns, totalNumberOfColumns }) => (
+const ColumnsHeader = ({
+  metrics,
+  uiColumnUnits,
+  columns,
+  totalNumberOfColumns,
+  columnsFillData,
+}) => (
   <>
     {metrics.map(metric => (
       <GridItem
@@ -13,8 +19,8 @@ const ColumnsHeader = ({ metrics, uiColumnUnits, columns, totalNumberOfColumns }
         {metric}
       </GridItem>
     ))}
-    {columns.map(column =>
-      uiColumnUnits[column].map(item => (
+    {columns.map((column) =>
+      uiColumnUnits[column].map((item) => (
         <GridItem
           header
           bordered
